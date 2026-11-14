@@ -5,7 +5,7 @@ lua54 'yes'
 name 'ta-dealer'
 description 'Car, boat and aircraft dealer with a live preview, private test drives and single-colour paint'
 author 'Tani'
-version '1.0.0'
+version '1.0.1'
 
 ui_page 'html/index.html'
 
@@ -34,11 +34,12 @@ server_scripts {
     'server/testdrive.lua'
 }
 
+-- ここに書いた依存はクライアントでも確かめられる。qbx_vehicles はサーバーだけのリソースで
+-- クライアントに配られないので、ここに書くと接続できなくなる。server/main.lua で確かめる
 dependencies {
     'ox_lib',
     'oxmysql',
     'ox_target',
     'qbx_core',
-    'qbx_vehicles',
     'qbx_vehiclekeys'
 }

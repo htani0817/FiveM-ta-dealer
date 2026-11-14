@@ -1,5 +1,10 @@
 -- ta-dealer サーバー側（カタログと購入）
 -- 値段・扱う車種・色・距離の判定はすべてここで行う。クライアントから来た値は信じない
+
+-- qbx_vehicles はサーバーだけのリソースなので、fxmanifest の dependencies ではなくここで確かめる
+-- （qbx_vehicleshop と同じ方法・同じ版）
+assert(lib.checkDependency('qbx_vehicles', '1.4.1'), 'ta-dealer には qbx_vehicles 1.4.1 以上が必要です')
+
 Dealer = {}
 
 local PAY_LABEL = { cash = '現金', bank = '銀行' }

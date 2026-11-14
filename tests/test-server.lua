@@ -63,8 +63,10 @@ function Entity(e) return { state = { set = function(_, k, v) statebags[e] = sta
 
 -- ---- ox_lib ----
 local callbacks = {}
+local depChecks = {}
 lib = {
   callback = { register = function(name, fn) callbacks[name] = fn end },
+  checkDependency = function(name, ver) depChecks[#depChecks + 1] = name .. '@' .. ver; return true end,
   waitFor = function(cb, msg, timeout)
     local v = cb()
     if not v then error(msg or 'timeout') end
@@ -166,6 +168,9 @@ local function runTimers()
   timers = {}
   for _, t in ipairs(list) do t.fn() end
 end
+
+-- ================== 起動 ==================
+ok(depChecks[1] == 'qbx_vehicles@1.4.1', 'qbx_vehicles はサーバー側で確かめる')
 
 -- ================== カタログ ==================
 local car = Dealer.catalog('car')
