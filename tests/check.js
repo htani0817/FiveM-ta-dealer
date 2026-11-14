@@ -22,6 +22,7 @@ const known = new Set((
   'IsScreenFadedOut IsScreenFadingOut DoScreenFadeIn DoScreenFadeOut ' +
   'AddBlipForCoord SetBlipSprite SetBlipColour SetBlipScale SetBlipAsShortRange BeginTextCommandSetBlipName ' +
   'AddTextComponentSubstringPlayerName EndTextCommandSetBlipName RemoveBlip ' +
+  'CreatePed SetBlockingOfNonTemporaryEvents SetPedCanRagdoll ' +
   'CreateCamWithParams SetCamActive RenderScriptCams DestroyCam SetCamCoord PointCamAtCoord SetFocusPosAndVel ClearFocus ' +
   'IsModelInCdimage IsModelAVehicle CreateVehicle SetModelAsNoLongerNeeded SetVehicleOnGroundProperly FreezeEntityPosition ' +
   'SetEntityInvincible SetVehicleDoorsLocked SetVehicleDirtLevel SetVehicleColours GetModelDimensions ' +

@@ -16,7 +16,9 @@ Config.CounterRange = 8.0
 
 -- 店ごとの設定
 --   kind       店の種類。'car' / 'boat' / 'air'
---   counter    窓口。ここに ox_target の円を置く
+--   ped        店員の NPC。model と coords（vec4。qbx_adminmenu の /vec4 で取った値をそのまま貼る）
+--              書いたときは、NPC に ox_target の「乗り物を見る」を付け、NPC の足元を窓口にする
+--   counter    ped を書かない店の窓口。ここに ox_target の円を置く
 --   categories 一覧のタブ。qbx_core の shared/vehicles.lua の category と、画面に出す名前。並びはこの順
 --   models     書いたときは、このモデルだけを売る（書かなければ categories に合う車両をすべて売る）
 --   preview    実物を見せる場所（ローカルの車両なので、ほかのプレイヤーには見えない）
@@ -30,7 +32,7 @@ Config.Shops = {
     car = {
         label = 'Premium Deluxe Motorsport',
         kind = 'car',
-        counter = vec3(-29.53, -1103.67, 26.42),
+        ped = { model = 'a_m_y_business_01', coords = vec4(-53.99, -1096.38, 25.42, 55.33) },
         blip = { coords = vec3(-45.67, -1098.34, 26.42), sprite = 326, color = 3 },
         categories = {
             { id = 'compacts', label = 'コンパクト' },
@@ -103,6 +105,14 @@ Config.Shops = {
         garageId = nil,
     },
 }
+
+-- NPC のいる店は、NPC の足元を窓口にする（距離の確認に使う）
+for _, shop in pairs(Config.Shops) do
+    if shop.ped then shop.counter = shop.ped.coords.xyz end
+end
+
+-- NPC に近づいたら出し、離れたら消す距離（m）
+Config.PedDistance = 60.0
 
 -- どの店でも売らないモデル
 -- 今まで qbx_vehicleshop が売っていなかったもの（パトカーと、luxury 店あつかいで出ていなかった 2 台）
