@@ -145,8 +145,16 @@ end
 -- 車の店は NPC、ボートと航空機は ped を書いていないので円
 ok(#zones == 2 and zoneFor('boat') and zoneFor('air'), 'ped の無い店は円の窓口')
 ok(zoneFor('boat').coords == Config.Shops.boat.counter, '円の位置は config の counter')
-ok(#points == 1 and points[1].distance == Config.PedDistance, 'NPC の店は近づいたときに出す')
+ok(#points == 2 and points[1].distance == Config.PedDistance, 'NPC の店（車・武装車両）は近づいたときに出す')
 ok(zoneFor('car') == nil, '近づく前は NPC を出さない')
+-- 車の店の NPC の点を先頭にする（pairs の順は決まっていない）
+table.sort(points, function(a, b)
+  return a.coords.x == Config.Shops.car.ped.coords.x and b.coords.x ~= Config.Shops.car.ped.coords.x
+end)
+points[2].onEnter()
+ok(zoneFor('armed') and zoneFor('armed').options[1].label == '武装車両を見る', '武装車両の店員には「武装車両を見る」')
+points[2].onExit()
+createdPeds = {}
 points[1].onEnter()
 local pc = Config.Shops.car.ped.coords
 local cp = createdPeds[1]

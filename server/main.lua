@@ -34,10 +34,13 @@ local function buildCatalogs()
             allow = {}
             for _, m in ipairs(shop.models) do allow[m] = true end
         end
+        local deny = {}
+        for _, m in ipairs(shop.exclude or {}) do deny[m] = true end
         local list, byModel = {}, {}
         for model, v in pairs(vehicles) do
             local price = tonumber(v.price)
-            if cats[v.category] and not Config.Blocklist[model] and (not allow or allow[model]) and price and price > 0 then
+            if cats[v.category] and not Config.Blocklist[model] and not deny[model]
+                and (not allow or allow[model]) and price and price > 0 then
                 local row = {
                     model = model,
                     name = v.name or model,
