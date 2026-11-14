@@ -1,0 +1,665 @@
+/* ta-dealer の NUI
+   方向: 夜のショールームと塗装の見本帳。画面の主役はゲーム内の実物の乗り物なので、
+   パネルは左と右下に寄せて中央を空ける。土台は ta-jobswitch・ta-fishing と同じ落ち着いた灰色
+   色を持つのは塗装のチップだけ。差し色（真鍮）は、購入ボタンと選んでいる行の印だけに使う
+   決まった印は塗装見本のチップ。色の下に GTA の塗装番号を等幅で添える */
+
+:root {
+    --font: 'Yu Gothic UI', 'Meiryo UI', 'Noto Sans JP', sans-serif;
+    --mono: 'Cascadia Mono', 'Consolas', ui-monospace, monospace;
+
+    --surface: #17191c;
+    --card: #1c1f22;
+    --raised: #1f2226;
+    --raised-hover: #272b30;
+    --hairline: rgba(232, 236, 240, 0.08);
+    --hairline-strong: rgba(232, 236, 240, 0.12);
+
+    --text: #e8ebee;
+    --text-2: #a3abb3;
+    --muted: #7a828a;
+
+    --accent: #c9a86a;      /* 真鍮。上に置く文字は --surface（コントラスト 8:1 ほど） */
+    --accent-hover: #d6b77d;
+    --negative-text: #f0868a;
+
+    /* 大きさの倍率。app.js が「画面の高さ / 1080 × config の倍率」を入れる */
+    --scale: 1;
+    --edge: 32px;
+
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --dur-fast: 150ms;
+    --dur-menu: 200ms;
+    --dur-enter: 320ms;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: transparent;
+    font-family: var(--font);
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
+}
+
+/* ブラウザ単体で開いたときだけの背景（ゲームでは透明） */
+body.preview {
+    background: #0e0f11;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.num {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+}
+
+button {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    cursor: pointer;
+}
+
+button:focus-visible,
+input:focus-visible,
+.row:focus-visible,
+.chip:focus-visible {
+    outline: 2px solid rgba(232, 236, 240, 0.5);
+    outline-offset: 2px;
+}
+
+svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 4px;
+    background: var(--raised);
+    box-shadow: inset 0 0 0 1px var(--hairline-strong), inset 0 -1px 0 rgba(0, 0, 0, 0.35);
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1;
+    color: var(--text-2);
+}
+
+.label {
+    font-size: 12px;
+    color: var(--muted);
+}
+
+/* ================== 全体 ================== */
+
+.shop {
+    position: fixed;
+    inset: 0;
+    animation: enter var(--dur-enter) var(--ease);
+}
+
+.stage {
+    position: absolute;
+    inset: 0;
+    cursor: grab;
+}
+
+.stage.dragging {
+    cursor: grabbing;
+}
+
+.panel {
+    position: absolute;
+    background: rgba(23, 25, 28, 0.94);
+    border-radius: 16px;
+    box-shadow: inset 0 0 0 1px var(--hairline);
+}
+
+@keyframes enter {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+/* ================== 左: 一覧 ================== */
+
+.catalog {
+    top: var(--edge);
+    left: var(--edge);
+    width: 340px;
+    height: calc((100vh - var(--edge) * 2) / var(--scale));
+    max-height: 960px;
+    display: flex;
+    flex-direction: column;
+    padding: 20px 0 8px;
+    transform: scale(var(--scale));
+    transform-origin: left top;
+}
+
+.catalog-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 16px 0 20px;
+}
+
+.shop-name {
+    font-size: 17px;
+    font-weight: 500;
+    line-height: 24px;
+}
+
+.shop-meta {
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    color: var(--muted);
+    transition: background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+
+.icon-btn:hover {
+    background: var(--raised);
+    color: var(--text);
+}
+
+.tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 16px 20px 12px;
+}
+
+.tab {
+    height: 28px;
+    padding: 0 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    color: var(--text-2);
+    transition: background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+
+.tab:hover {
+    background: var(--raised);
+    color: var(--text);
+}
+
+.tab.on {
+    background: var(--raised-hover);
+    color: var(--text);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 36px;
+    margin: 0 20px 8px;
+    padding: 0 12px;
+    border-radius: 8px;
+    background: var(--raised);
+    box-shadow: inset 0 0 0 1px var(--hairline);
+    color: var(--muted);
+}
+
+.search input {
+    flex: 1;
+    min-width: 0;
+    background: none;
+    border: 0;
+    outline: none;
+    font: inherit;
+    color: var(--text);
+}
+
+.search input::placeholder {
+    color: var(--muted);
+}
+
+.search:focus-within {
+    box-shadow: inset 0 0 0 1px var(--hairline-strong);
+}
+
+.rows {
+    flex: 1;
+    list-style: none;
+    overflow-y: auto;
+    padding: 0 8px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--raised-hover) transparent;
+}
+
+.rows::-webkit-scrollbar {
+    width: 8px;
+}
+
+.rows::-webkit-scrollbar-thumb {
+    background: var(--raised-hover);
+    border-radius: 4px;
+}
+
+.row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 48px;
+    padding: 0 12px;
+    margin-bottom: 2px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color var(--dur-fast) var(--ease);
+}
+
+.row:hover {
+    background: var(--card);
+}
+
+.row.sel {
+    background: var(--raised-hover);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* 選んでいる行の印（差し色） */
+.row.sel::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 12px;
+    bottom: 12px;
+    width: 2px;
+    border-radius: 1px;
+    background: var(--accent);
+}
+
+.row-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.row-name {
+    font-size: 14px;
+    line-height: 20px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.row-brand {
+    font-size: 12px;
+    line-height: 16px;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.row-price {
+    font-size: 13px;
+    color: var(--text-2);
+}
+
+.row.sel .row-price {
+    color: var(--text);
+}
+
+.empty {
+    padding: 24px 20px;
+    font-size: 13px;
+    color: var(--muted);
+}
+
+/* ================== 右下: 選んだ乗り物 ================== */
+
+.detail {
+    right: var(--edge);
+    bottom: var(--edge);
+    width: 380px;
+    padding: 20px;
+    transform: scale(var(--scale));
+    transform-origin: right bottom;
+}
+
+.kicker {
+    font-size: 12px;
+    line-height: 16px;
+    color: var(--muted);
+}
+
+.d-name {
+    margin-top: 4px;
+    font-size: 26px;
+    font-weight: 500;
+    line-height: 1.15;
+}
+
+.specs {
+    display: grid;
+    grid-template-columns: 1.4fr 0.8fr 1fr;
+    gap: 12px;
+    margin-top: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--hairline);
+}
+
+.specs dt {
+    font-size: 12px;
+    line-height: 16px;
+    color: var(--muted);
+}
+
+.specs dd {
+    margin-top: 4px;
+    font-size: 15px;
+    line-height: 20px;
+    white-space: nowrap;
+}
+
+.unit {
+    margin-left: 4px;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.paint {
+    padding: 20px 0;
+    border-bottom: 1px solid var(--hairline);
+}
+
+.paint-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.paint-name {
+    font-size: 13px;
+    color: var(--text);
+}
+
+.paint-no {
+    margin-left: 8px;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+/* 塗装見本のチップ。上が色、下が番号の札 */
+.chips {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 8px;
+}
+
+.chip {
+    display: flex;
+    flex-direction: column;
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--raised);
+    box-shadow: inset 0 0 0 1px var(--hairline);
+    transition: box-shadow var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
+}
+
+.chip-swatch {
+    display: block;
+    width: 100%;
+    height: 28px;
+    background: var(--c);
+    /* 塗装の艶。同じ色の中で上だけ少し明るい */
+    box-shadow: inset 0 8px 10px -6px rgba(255, 255, 255, 0.28), inset 0 -6px 8px -6px rgba(0, 0, 0, 0.4);
+}
+
+.chip-no {
+    display: block;
+    width: 100%;
+    height: 16px;
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 16px;
+    text-align: center;
+    color: var(--muted);
+}
+
+.chip:hover {
+    box-shadow: inset 0 0 0 1px var(--hairline-strong);
+}
+
+.chip:active {
+    transform: scale(0.97);
+}
+
+.chip.on {
+    box-shadow: 0 0 0 1px var(--surface), 0 0 0 2px var(--text);
+}
+
+.chip.on .chip-no {
+    color: var(--text);
+}
+
+.buy {
+    padding-top: 20px;
+}
+
+.price {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.price-figure {
+    font-size: 26px;
+    line-height: 32px;
+    font-weight: 500;
+}
+
+.pay {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--text-2);
+}
+
+.pay.short {
+    color: var(--negative-text);
+}
+
+.actions {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 44px;
+    padding: 0 16px;
+    border-radius: 10px;
+    background: var(--raised);
+    box-shadow: inset 0 0 0 1px var(--hairline-strong), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    transition: background-color var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease), opacity var(--dur-fast) var(--ease);
+}
+
+.btn:hover {
+    background: var(--raised-hover);
+}
+
+.btn:active {
+    transform: scale(0.98);
+}
+
+.btn.primary {
+    background: var(--accent);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    color: var(--surface);
+}
+
+.btn.primary:hover {
+    background: var(--accent-hover);
+}
+
+.btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+    transform: none;
+}
+
+.btn-meta {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--muted);
+}
+
+.confirm {
+    animation: rise var(--dur-menu) var(--ease);
+}
+
+@keyframes rise {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+.detail.loading .specs dd,
+.detail.loading .d-name {
+    opacity: 0.5;
+}
+
+/* ================== 下: 操作の案内 ================== */
+
+.hints {
+    position: absolute;
+    left: 50%;
+    bottom: var(--edge);
+    display: flex;
+    gap: 20px;
+    padding: 8px 16px;
+    border-radius: 10px;
+    background: rgba(23, 25, 28, 0.72);
+    font-size: 12px;
+    color: var(--text-2);
+    transform: translateX(-50%) scale(var(--scale));
+    transform-origin: center bottom;
+    pointer-events: none;
+}
+
+.hints span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.hints kbd + kbd {
+    margin-left: -2px;
+}
+
+/* ================== 試乗中 ================== */
+
+.test {
+    position: fixed;
+    top: var(--edge);
+    left: 50%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 40px;
+    padding: 0 8px 0 16px;
+    border-radius: 12px;
+    background: rgba(23, 25, 28, 0.9);
+    box-shadow: inset 0 0 0 1px var(--hairline);
+    font-size: 13px;
+    transform: translateX(-50%) scale(var(--scale));
+    transform-origin: center top;
+    animation: enter var(--dur-enter) var(--ease);
+}
+
+.test-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--accent);
+}
+
+.test-label {
+    color: var(--muted);
+}
+
+.test-name {
+    color: var(--text);
+}
+
+.test-time {
+    min-width: 44px;
+    font-size: 14px;
+    text-align: right;
+    color: var(--text);
+}
+
+.test-time.low {
+    color: var(--negative-text);
+}
+
+.test-end {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 28px;
+    padding: 0 8px;
+    border-radius: 8px;
+    background: var(--card);
+    color: var(--text-2);
+    font-size: 12px;
+}

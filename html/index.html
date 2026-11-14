@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ta-dealer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="shop" class="shop hidden">
+        <!-- 中央は実物の乗り物。ここをドラッグで回し、ホイールで寄る -->
+        <div id="stage" class="stage" aria-hidden="true"></div>
+
+        <!-- 左: 一覧 -->
+        <section class="panel catalog" aria-label="乗り物の一覧">
+            <header class="catalog-head">
+                <div>
+                    <h1 class="shop-name" id="shop-name"></h1>
+                    <p class="shop-meta num" id="shop-count"></p>
+                </div>
+                <button class="icon-btn" data-act="close" aria-label="閉じる">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                </button>
+            </header>
+            <nav class="tabs" id="tabs" aria-label="種類"></nav>
+            <label class="search">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+                <input id="search" type="text" placeholder="車名・メーカー" autocomplete="off" spellcheck="false">
+            </label>
+            <ul class="rows" id="rows"></ul>
+            <p class="empty hidden" id="empty">当てはまる乗り物がありません</p>
+        </section>
+
+        <!-- 右下: 選んだ乗り物 -->
+        <section class="panel detail" id="detail" aria-label="選んだ乗り物">
+            <p class="kicker" id="d-kicker"></p>
+            <h2 class="d-name" id="d-name"></h2>
+
+            <dl class="specs">
+                <div><dt>最高速（推定）</dt><dd><span class="num" id="d-speed">—</span><span class="unit">km/h</span></dd></div>
+                <div><dt>座席</dt><dd><span class="num" id="d-seats">—</span></dd></div>
+                <div><dt>種類</dt><dd id="d-class">—</dd></div>
+            </dl>
+
+            <div class="paint">
+                <div class="paint-head">
+                    <span class="label">塗装</span>
+                    <span class="paint-name"><span id="p-name"></span><span class="paint-no num" id="p-no"></span></span>
+                </div>
+                <div class="chips" id="chips" role="radiogroup" aria-label="塗装"></div>
+            </div>
+
+            <footer class="buy" id="buy">
+                <div class="price">
+                    <span class="label">価格</span>
+                    <span class="price-figure num" id="d-price"></span>
+                    <span class="pay" id="d-pay"></span>
+                </div>
+                <div class="actions" id="actions">
+                    <button class="btn" data-act="test">試乗<span class="btn-meta num" id="test-len"></span></button>
+                    <button class="btn primary" data-act="buy" id="buy-btn">購入</button>
+                </div>
+                <div class="actions confirm hidden" id="confirm">
+                    <button class="btn" data-act="cancel">やめる</button>
+                    <button class="btn primary" data-act="confirm" id="confirm-btn">支払って購入</button>
+                </div>
+            </footer>
+        </section>
+
+        <!-- 下: 操作の案内 -->
+        <div class="hints" aria-hidden="true">
+            <span><kbd>ドラッグ</kbd>回す</span>
+            <span><kbd>ホイール</kbd>寄る・引く</span>
+            <span><kbd>↑</kbd><kbd>↓</kbd>選ぶ</span>
+            <span><kbd>Esc</kbd>閉じる</span>
+        </div>
+    </div>
+
+    <!-- 試乗中の残り時間 -->
+    <div id="test" class="test hidden" role="status">
+        <span class="test-dot"></span>
+        <span class="test-label">試乗</span>
+        <span class="test-name" id="t-name"></span>
+        <span class="test-time num" id="t-time"></span>
+        <span class="test-end"><kbd id="t-key"></kbd>やめる</span>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
