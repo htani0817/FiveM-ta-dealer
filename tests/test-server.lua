@@ -85,8 +85,11 @@ local VEHICLES = {
   panto = { name = 'Panto', brand = 'Benefactor', price = 850000, category = 'compacts' },
   asea = { name = 'Asea', brand = 'Declasse', price = 1250000, category = 'sedans' },
   police = { name = 'Police', brand = 'Vapid', price = 5000000, category = 'sedans' },          -- Blocklist
-  oppressor = { name = 'Oppressor', brand = 'Pegassi', price = 9000000, category = 'motorcycles' }, -- Blocklist
-  zentorno = { name = 'Zentorno', brand = 'Pegassi', price = 72500000, category = 'super' },    -- 車の店のタブに無い
+  oppressor = { name = 'Oppressor', brand = 'Pegassi', price = 9000000, category = 'motorcycles' }, -- 武装車
+  zentorno = { name = 'Zentorno', brand = 'Pegassi', price = 72500000, category = 'super' },
+  vigilante = { name = 'Vigilante', brand = 'Grotti', price = 375000000, category = 'super' },  -- 武装車
+  comet2 = { name = 'Comet', brand = 'Pfister', price = 10000000, category = 'sports' },
+  ambulance = { name = 'Ambulance', brand = 'Brute', price = 3000000, category = 'emergency' },  -- 車の店のタブに無い
   free = { name = 'Free', brand = '', price = 0, category = 'compacts' },                       -- 値段なし
   dinghy = { name = 'Dinghy', brand = 'Nagasaki', price = 1660000, category = 'boats' },
   frogger = { name = 'Frogger', brand = 'Maibatsu', price = 130000000, category = 'helicopters' },
@@ -175,11 +178,18 @@ ok(depChecks[1] == 'qbx_vehicles@1.4.1', 'qbx_vehicles はサーバー側で確�
 -- ================== カタログ ==================
 local car = Dealer.catalog('car')
 ok(car.byModel.blista and car.byModel.panto and car.byModel.asea, '車の店にタブの車種が並ぶ')
-ok(not car.byModel.police and not car.byModel.oppressor, 'Blocklist の車種は並ばない')
-ok(not car.byModel.zentorno, 'タブに無い種類（super）は並ばない')
+ok(not car.byModel.police, 'Blocklist の車種は並ばない')
+ok(car.byModel.zentorno ~= nil, 'スーパーカーが並ぶ')
+ok(not car.byModel.vigilante and not car.byModel.oppressor, '武装車は車の店に並ばない（exclude）')
+ok(car.byModel.comet2 ~= nil, 'スポーツカーが並ぶ')
+ok(not car.byModel.ambulance, 'タブに無い種類（emergency）は並ばない')
+local armed = Dealer.catalog('armed')
+ok(armed.byModel.vigilante and armed.byModel.oppressor, '武装車は武装車両の店に並ぶ')
+ok(not armed.byModel.blista and not armed.byModel.zentorno and not armed.byModel.comet2, '武装車両の店に普通の車は並ばない')
+ok(not armed.byModel.police, '武装車両の店でも Blocklist は並ばない')
 ok(not car.byModel.free, '値段の無い車種は並ばない')
 ok(not car.byModel.dinghy and not car.byModel.frogger, '船・空は車の店に並ばない')
-ok(car.list[1].model == 'panto' and car.list[#car.list].model == 'blista', '安い順')
+ok(car.list[1].model == 'panto' and car.list[#car.list].model == 'zentorno', '安い順')
 local air = Dealer.catalog('air')
 ok(air.byModel.frogger and air.byModel.luxor, '空の店に models の機体が並ぶ')
 ok(not air.byModel.akula, '空の店は models に無い機体を並べない')
@@ -187,14 +197,14 @@ ok(Dealer.catalog('boat').byModel.dinghy ~= nil, 'ボートの店')
 
 addPlayer(1, 2000000, 50000000, vec3(CAR.x, CAR.y, CAR.z))
 local r = call('ta-dealer:catalog', 1, 'car')
-ok(r.ok and #r.list == 3 and r.money.cash == 2000000 and r.money.bank == 50000000, '一覧と所持金を返す')
+ok(r.ok and #r.list == 5 and r.money.cash == 2000000 and r.money.bank == 50000000, '一覧と所持金を返す')
 ok(call('ta-dealer:catalog', 1, 'nope').ok == false, '無い店は断る')
 addPlayer(2, 0, 0, vec3(0, 0, 0))
 r = call('ta-dealer:catalog', 2, 'car')
 ok(r.ok == false and r.message == '窓口から離れています', '窓口から離れていると開けない')
 
 -- ================== 購入 ==================
-r = call('ta-dealer:buy', 1, 'car', 'zentorno', 27)
+r = call('ta-dealer:buy', 1, 'car', 'vigilante', 27)
 ok(r.ok == false and r.message == 'この店では扱っていません', '店に無い車種は買えない')
 r = call('ta-dealer:buy', 1, 'car', 'frogger', 27)
 ok(r.ok == false, 'ほかの店の車種は買えない')
@@ -231,6 +241,14 @@ addPlayer(3, 100, 100, vec3(CAR.x, CAR.y, CAR.z))
 local before = #created
 r = call('ta-dealer:buy', 3, 'car', 'panto', 0)
 ok(r.ok == false and r.message == 'お金が足りません' and #created == before, 'お金が足りなければ登録しない')
+
+-- 武装車両の店（車の店の NPC の隣。窓口の距離は武装車両の店員から測る）
+r = call('ta-dealer:buy', 1, 'armed', 'oppressor', 0)
+ok(r.ok == true and created[#created].model == 'oppressor', '武装車両の店で武装車を買える')
+r = call('ta-dealer:buy', 1, 'armed', 'blista', 0)
+ok(r.ok == false and r.message == 'この店では扱っていません', '武装車両の店では普通の車は買えない')
+local ARMED = Config.Shops.armed.counter
+ok(#(ARMED - CAR) < 2.0, '武装車両の店員は車の店の店員の隣')
 
 -- 受け渡し場所が全部ふさがっている（ほかの空間の車両は数えない）
 for k in pairs(vehicles) do vehicles[k] = nil end

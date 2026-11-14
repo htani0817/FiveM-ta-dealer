@@ -5,7 +5,7 @@ lua54 'yes'
 name 'ta-dealer'
 description 'Car, boat and aircraft dealer with a live preview, private test drives and single-colour paint'
 author 'Tani'
-version '1.0.2'
+version '1.0.3'
 
 ui_page 'html/index.html'
 

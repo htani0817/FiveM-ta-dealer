@@ -71,7 +71,7 @@ local function targetOptions(id, shop)
         {
             name = 'ta-dealer:' .. id,
             icon = shop.kind == 'boat' and 'fa-solid fa-ship' or shop.kind == 'air' and 'fa-solid fa-plane' or 'fa-solid fa-car',
-            label = '乗り物を見る',
+            label = shop.target or '乗り物を見る',
             distance = 2.5,
             onSelect = function() openShop(id) end,
         },
