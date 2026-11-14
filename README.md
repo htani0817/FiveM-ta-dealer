@@ -65,7 +65,7 @@ qbx_vehicleshop の 3 店（Premium Deluxe Motorsport・ボート販売店・航
 >
 > 止める前に、ローン中の乗り物（`vehicle_financing` の表）が無いか確かめる。
 
-依存: ox_lib、oxmysql、ox_target、qbx_core（`@qbx_core/modules/lib.lua` の `qbx.spawnVehicle`）、qbx_vehicles、qbx_vehiclekeys、okokNotify。燃料は lc_fuel が `fuelLevel` を読むので、満タンで出る。
+依存: ox_lib、oxmysql、ox_target、qbx_core（`@qbx_core/modules/lib.lua` の `qbx.spawnVehicle`）、qbx_vehicles 1.4.1 以上、qbx_vehiclekeys、okokNotify。燃料は lc_fuel が `fuelLevel` を読むので、満タンで出る。qbx_vehicles はサーバーだけのリソースでクライアントに配られないので、`fxmanifest.lua` の `dependencies` には書かず、`server/main.lua` の `lib.checkDependency` で確かめる（`dependencies` に書くと、接続時に「Couldn't start resource ta-dealer」で入れなくなる）。
 
 > [!NOTE]
 > **キーの割り当て**
@@ -155,7 +155,7 @@ node tests/run-test.js . tests/test-client.lua
 node tests/ui-shot.js "file:///<このフォルダ>/html/index.html" <出力先> "wait:500,shot:open" 1920x1080
 ```
 
-- `test-server.lua`: カタログの絞り込み、店に無い車種・見本帳に無い色・窓口から遠い・お金が足りない・倒れている・手錠を断る、現金 → 銀行の順、DB に色が入る、鍵のあとに解錠、受け渡し場所のふさがり（試乗の空間の車両は数えない）、登録失敗とエラーで返金、出せなくても登録は残る、`garageId`、試乗の空間・時間切れ・やめる・切断・停止・出せなかったとき・クールダウン（2026-11-14 時点で 67 件）
+- `test-server.lua`: カタログの絞り込み、店に無い車種・見本帳に無い色・窓口から遠い・お金が足りない・倒れている・手錠を断る、現金 → 銀行の順、DB に色が入る、鍵のあとに解錠、受け渡し場所のふさがり（試乗の空間の車両は数えない）、登録失敗とエラーで返金、出せなくても登録は残る、`garageId`、試乗の空間・時間切れ・やめる・切断・停止・出せなかったとき・クールダウン（2026-11-14 時点で 68 件）。`check.js` は、`dependencies` にサーバーだけのリソースが無いかも見る
 - `test-client.lua`: 窓口から開く流れ、プレビューの車両はネットワークに出さない、選んだ色で塗る、見本帳に無い色は使わない、買えたら閉じる、試乗中は窓口を開かない、倒れたら知らせる（30 件）
 - `ui-shot.js`: ヘッドレス Chromium で画面を撮る。1920×1080 と 1280×720 で確かめた
 
