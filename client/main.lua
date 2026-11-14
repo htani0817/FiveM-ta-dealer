@@ -64,6 +64,44 @@ end
 -- ================== 窓口と地図の印 ==================
 
 local blips = {}
+local peds = {} -- 店 ID → 出している NPC
+
+local function targetOptions(id, shop)
+    return {
+        {
+            name = 'ta-dealer:' .. id,
+            icon = shop.kind == 'boat' and 'fa-solid fa-ship' or shop.kind == 'air' and 'fa-solid fa-plane' or 'fa-solid fa-car',
+            label = '乗り物を見る',
+            distance = 2.5,
+            onSelect = function() openShop(id) end,
+        },
+    }
+end
+
+-- 店員の NPC を出す。自分にだけ見えるローカルの NPC で、動かず、撃たれても倒れない
+local function spawnPed(id, shop)
+    if peds[id] then return end
+    local p = shop.ped
+    local hash = joaat(p.model)
+    local loaded = pcall(lib.requestModel, hash, 10000)
+    if not loaded or peds[id] then return end
+    local ped = CreatePed(4, hash, p.coords.x, p.coords.y, p.coords.z, p.coords.w, false, true)
+    SetModelAsNoLongerNeeded(hash)
+    SetEntityInvincible(ped, true)
+    FreezeEntityPosition(ped, true)
+    SetBlockingOfNonTemporaryEvents(ped, true)
+    SetPedCanRagdoll(ped, false)
+    peds[id] = ped
+    exports.ox_target:addLocalEntity(ped, targetOptions(id, shop))
+end
+
+local function removePed(id)
+    local ped = peds[id]
+    if not ped then return end
+    peds[id] = nil
+    exports.ox_target:removeLocalEntity(ped)
+    if DoesEntityExist(ped) then DeleteEntity(ped) end
+end
 
 CreateThread(function()
     for id, shop in pairs(Config.Shops) do
@@ -78,20 +116,22 @@ CreateThread(function()
             EndTextCommandSetBlipName(b)
             blips[#blips + 1] = b
         end
-        exports.ox_target:addSphereZone({
-            coords = shop.counter,
-            radius = 1.5,
-            debug = Config.Debug,
-            options = {
-                {
-                    name = 'ta-dealer:' .. id,
-                    icon = shop.kind == 'boat' and 'fa-solid fa-ship' or shop.kind == 'air' and 'fa-solid fa-plane' or 'fa-solid fa-car',
-                    label = '乗り物を見る',
-                    distance = 2.5,
-                    onSelect = function() openShop(id) end,
-                },
-            },
-        })
+        if shop.ped then
+            -- 近づいたら出し、離れたら消す
+            lib.points.new({
+                coords = shop.ped.coords.xyz,
+                distance = Config.PedDistance,
+                onEnter = function() spawnPed(id, shop) end,
+                onExit = function() removePed(id) end,
+            })
+        else
+            exports.ox_target:addSphereZone({
+                coords = shop.counter,
+                radius = 1.5,
+                debug = Config.Debug,
+                options = targetOptions(id, shop),
+            })
+        end
     end
 end)
 
@@ -168,4 +208,5 @@ AddEventHandler('onResourceStop', function(name)
     end
     if TestDrive.active then DoScreenFadeIn(0) end
     for _, b in ipairs(blips) do RemoveBlip(b) end
+    for id in pairs(peds) do removePed(id) end
 end)

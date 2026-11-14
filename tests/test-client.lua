@@ -90,7 +90,17 @@ function GetVehicleModelEstimatedMaxSpeed() return 44.0 end
 -- ---- ox_lib・ox_target・okokNotify ----
 cache = { ped = 1, vehicle = false }
 local cbResults, cbCalls = {}, {}
+local points = {}
+local createdPeds = {}
+function CreatePed(_, h, x, y, z, w, net)
+  nextVeh = nextVeh + 1
+  vehicles[nextVeh] = { hash = h, ped = true }
+  createdPeds[#createdPeds + 1] = { id = nextVeh, x = x, y = y, z = z, w = w, net = net }
+  return nextVeh
+end
+SetBlockingOfNonTemporaryEvents, SetPedCanRagdoll = rec('x'), rec('x')
 lib = {
+  points = { new = function(p) points[#points + 1] = p; return p end },
   requestModel = function(h) return h end,
   callback = {
     await = function(name, _, ...)
@@ -100,9 +110,14 @@ lib = {
   },
 }
 local zones = {}
+local entityTargets = {} -- NPC → ox_target の選択肢
 local notifies = {}
 exports = {
-  ox_target = { addSphereZone = function(_, z) zones[#zones + 1] = z end },
+  ox_target = {
+    addSphereZone = function(_, z) zones[#zones + 1] = z end,
+    addLocalEntity = function(_, ent, options) entityTargets[ent] = options end,
+    removeLocalEntity = function(_, ent) entityTargets[ent] = nil end,
+  },
   okokNotify = { Alert = function(_, title, msg, ms, kind) notifies[#notifies + 1] = { msg = msg, kind = kind } end },
 }
 
@@ -121,11 +136,28 @@ local function zoneFor(id)
   for _, z in ipairs(zones) do
     if z.options[1].name == 'ta-dealer:' .. id then return z end
   end
+  for _, options in pairs(entityTargets) do
+    if options[1].name == 'ta-dealer:' .. id then return { options = options } end
+  end
 end
 
 -- ================== 窓口 ==================
-ok(#zones == 3, '3 店の窓口を置く')
-ok(zoneFor('car').coords == Config.Shops.car.counter, '窓口の位置は config の counter')
+-- 車の店は NPC、ボートと航空機は ped を書いていないので円
+ok(#zones == 2 and zoneFor('boat') and zoneFor('air'), 'ped の無い店は円の窓口')
+ok(zoneFor('boat').coords == Config.Shops.boat.counter, '円の位置は config の counter')
+ok(#points == 1 and points[1].distance == Config.PedDistance, 'NPC の店は近づいたときに出す')
+ok(zoneFor('car') == nil, '近づく前は NPC を出さない')
+points[1].onEnter()
+local pc = Config.Shops.car.ped.coords
+local cp = createdPeds[1]
+ok(cp and cp.x == pc.x and cp.z == pc.z and cp.w == pc.w and cp.net == false, 'config の vec4 の位置と向きに、ローカルの NPC を出す')
+ok(zoneFor('car') ~= nil and zoneFor('car').options[1].label == '乗り物を見る', 'NPC に「乗り物を見る」を付ける')
+ok(Config.Shops.car.counter.x == pc.x and Config.Shops.car.counter.y == pc.y, 'NPC の足元が窓口（距離の確認に使う）')
+points[1].onEnter()
+ok(#createdPeds == 1, '二重には出さない')
+points[1].onExit()
+ok(zoneFor('car') == nil and vehicles[cp.id] == nil, '離れたら NPC を消す')
+points[1].onEnter()
 
 -- 一覧が届かなければ開かない
 cbResults['ta-dealer:catalog'] = { ok = false, message = '窓口から離れています' }
